@@ -56,6 +56,9 @@ const BLOG = {
   ...require('./conf/plugin.config'), // 其他第三方插件 algolia全文索引
   ...require('./conf/performance.config'), // 性能优化配置
 
+  //   ********挂件组件相关********
+  // Chatbase
+  CHATBASE_ID: process.env.NEXT_PUBLIC_CHATBASE_ID || ca3gKYtCt7nksfJQ-oJxS, // 是否显示chatbase机器人 https://www.chatbase.co/
   // 高级用法
   ...require('./conf/layout-map.config'), // 路由与布局映射自定义，例如自定义特定路由的页面布局
   ...require('./conf/notion.config'), // 读取notion数据库相关的扩展配置，例如自定义表头
