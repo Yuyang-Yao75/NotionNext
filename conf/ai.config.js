@@ -26,7 +26,7 @@ module.exports = {
   COZE_TITLE: process.env.NEXT_PUBLIC_COZE_TITLE || 'NotionNext助手',
 
   // Chatbase 机器人 @see https://www.chatbase.co/
-  CHATBASE_ID: process.env.NEXT_PUBLIC_CHATBASE_ID || null,
+  CHATBASE_ID: process.env.NEXT_PUBLIC_CHATBASE_ID || 'ca3gKYtCt7nksfJQ-oJxS',
 
   // Dify 聊天机器人 @see https://dify.ai/
   DIFY_CHATBOT_ENABLED: process.env.NEXT_PUBLIC_DIFY_CHATBOT_ENABLED || false,
