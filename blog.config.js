@@ -5,17 +5,16 @@ const BLOG = {
   // Important page_id！！！Duplicate Template from  https://tanghh.notion.site/02ab3b8678004aa69e9e415905ef32a5
   NOTION_PAGE_ID:
     process.env.NOTION_PAGE_ID ||
-    '2decf9ef2dca819fb31ee9455432aecb',//暂时没有英文版本,en:7c1d570661754c8fbc568e00a01fd70e
-  THEME: process.env.NEXT_PUBLIC_THEME || 'hexo', // 当前主题，在themes文件夹下可找到所有支持的主题；主题名称就是文件夹名，例如 example,fukasawa,gitbook,heo,hexo,landing,matery,medium,next,nobelium,plog,simple
-  // THEME_SWITCH: process.env.NEXT_PUBLIC_THEME_SWITCH || true, // 是否显示切换主题按钮
+    '2decf9ef2dca819fb31ee9455432aecb', // 暂时没有英文版本
+  THEME: process.env.NEXT_PUBLIC_THEME || 'hexo', // 当前主题，在themes文件夹下可找到所有支持的主题；主题名称就是文件夹名，例如 claude,endspace,example,fukasawa,fuwari,gitbook,heo,hexo,landing,matery,medium,next,nobelium,plog,simple
   LANG: process.env.NEXT_PUBLIC_LANG || 'zh-CN', // e.g 'zh-CN','en-US'  see /lib/lang.js for more.
   SINCE: process.env.NEXT_PUBLIC_SINCE || 2026, // e.g if leave this empty, current year will be used.
 
   PSEUDO_STATIC: process.env.NEXT_PUBLIC_PSEUDO_STATIC || false, // 伪静态路径，开启后所有文章URL都以 .html 结尾。
   NEXT_REVALIDATE_SECOND: process.env.NEXT_PUBLIC_REVALIDATE_SECOND || 60, // 更新缓存间隔 单位(秒)；即每个页面有60秒的纯静态期、此期间无论多少次访问都不会抓取notion数据；调大该值有助于节省Vercel资源、同时提升访问速率，但也会使文章更新有延迟。
+  REVALIDATION_TOKEN: process.env.REVALIDATION_TOKEN || '', // On-Demand Revalidation Token，设置后可通过 POST /api/revalidate 立即刷新页面缓存（解决 Notion 内容更新延迟问题）
   APPEARANCE: process.env.NEXT_PUBLIC_APPEARANCE || 'auto', // ['light', 'dark', 'auto'], // light 日间模式 ， dark夜间模式， auto根据时间和主题自动夜间模式
   APPEARANCE_DARK_TIME: process.env.NEXT_PUBLIC_APPEARANCE_DARK_TIME || [18, 6], // 夜间模式起至时间，false时关闭根据时间自动切换夜间模式
-  POST_URL_PREFIX: process.env.NEXT_PUBLIC_POST_URL_PREFIX || '', // POST类型文章的默认路径前缀，例如默认POST类型的路径是  /article/[slug]
 
   AUTHOR: process.env.NEXT_PUBLIC_AUTHOR || '务醒', // 您的昵称 例如 tangly1024
   BIO: process.env.NEXT_PUBLIC_BIO || '慢慢搭一座知识楼📖', // 作者简介
@@ -27,17 +26,6 @@ const BLOG = {
   BEI_AN_GONGAN: process.env.NEXT_PUBLIC_BEI_AN_GONGAN || '', // 公安备案号，例如 '浙公网安备3xxxxxxxx8号'
 
   // RSS订阅
-  // 社交链接，不需要可留空白，例如 CONTACT_WEIBO:''
-  CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'yyyao75@163.com', // 邮箱地址 例如mail@tangly1024.com
-  // CONTACT_WEIBO: process.env.NEXT_PUBLIC_CONTACT_WEIBO || '', // 你的微博个人主页
-  // CONTACT_TWITTER: process.env.NEXT_PUBLIC_CONTACT_TWITTER || '', // 你的twitter个人主页
-  CONTACT_GITHUB: process.env.NEXT_PUBLIC_CONTACT_GITHUB || 'https://github.com/Yuyang-Yao75', // 你的github个人主页 例如 https://github.com/tangly1024
-  // CONTACT_TELEGRAM: process.env.NEXT_PUBLIC_CONTACT_TELEGRAM || '', // 你的telegram 地址 例如 https://t.me/tangly_1024
-  // CONTACT_LINKEDIN: process.env.NEXT_PUBLIC_CONTACT_LINKEDIN || '', // 你的linkedIn 首页
-  // CONTACT_INSTAGRAM: process.env.NEXT_PUBLIC_CONTACT_INSTAGRAM || '', // 您的instagram地址
-  CONTACT_BILIBILI: process.env.NEXT_PUBLIC_CONTACT_BILIBILI || 'https://b23.tv/qFeHXcf', // B站主页
-  // CONTACT_YOUTUBE: process.env.NEXT_PUBLIC_CONTACT_YOUTUBE || '', // Youtube主页
-  CONTACT_XIAOHONGSHU: process.env.NEXT_PUBLIC_CONTACT_XIAOHONGSHU || 'https://xhslink.com/m/2evYaEmdNjB', // 小红书主页
   ENABLE_RSS: process.env.NEXT_PUBLIC_ENABLE_RSS || false, // 是否开启RSS订阅功能
 
   // 其它复杂配置
@@ -54,11 +42,10 @@ const BLOG = {
   ...require('./conf/widget.config'), // 悬浮在网页上的挂件，聊天客服、宠物挂件、音乐播放器等
   ...require('./conf/ad.config'), // 广告营收插件
   ...require('./conf/plugin.config'), // 其他第三方插件 algolia全文索引
+  ...require('./conf/ai.config'), // AI 相关配置（AI摘要、AI聊天机器人等）
   ...require('./conf/performance.config'), // 性能优化配置
+  ...require('./conf/top-tag.config'), // 置顶文章全局配置
 
-  //   ********挂件组件相关********
-  // Chatbase
-  CHATBASE_ID: process.env.NEXT_PUBLIC_CHATBASE_ID || 'ca3gKYtCt7nksfJQ-oJxS', // 是否显示chatbase机器人 https://www.chatbase.co/
   // 高级用法
   ...require('./conf/layout-map.config'), // 路由与布局映射自定义，例如自定义特定路由的页面布局
   ...require('./conf/notion.config'), // 读取notion数据库相关的扩展配置，例如自定义表头
@@ -72,7 +59,9 @@ const BLOG = {
   CUSTOM_MENU: process.env.NEXT_PUBLIC_CUSTOM_MENU || true, // 支持Menu类型的菜单，替代了3.12版本前的Page类型
 
   // 文章列表相关设置
-  CAN_COPY: process.env.NEXT_PUBLIC_CAN_COPY || true, // 是否允许复制页面内容 默认允许，如果设置为false、则全栈禁止复制内容。
+  CAN_COPY: process.env.NEXT_PUBLIC_CAN_COPY || true, // 是否允许复制页面内容，默认允许；可被文章属性 CAN_COPY / ext.CAN_COPY 覆盖。
+
+  ...require('./conf/techgrow.config'), // 公众号导流插件（TechGrow）
 
   // 侧栏布局 是否反转(左变右,右变左) 已支持主题: hexo next medium fukasawa example
   LAYOUT_SIDEBAR_REVERSE:
@@ -82,6 +71,14 @@ const BLOG = {
   GREETING_WORDS:
     process.env.NEXT_PUBLIC_GREETING_WORDS ||
     'Hi，我是一个量化研究员, Hi，我在不确定性里找规律, Hi，我在一日三餐里找快乐, 欢迎来到我的博客🎉',
+
+  // 欢迎语打字效果类型速度
+  GREETING_WORDS_TYPE_SPEED:
+    process.env.NEXT_PUBLIC_GREETING_WORDS_TYPE_SPEED || 200,
+
+  // 欢迎语打字效果回退速度
+  GREETING_WORDS_BACK_SPEED:
+    process.env.NEXT_PUBLIC_GREETING_WORDS_BACK_SPEED || 100,
 
   // uuid重定向至 slug
   UUID_REDIRECT: process.env.UUID_REDIRECT || false
