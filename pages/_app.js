@@ -18,17 +18,42 @@ import ErrorHandler from '@/lib/utils/errorHandler'
 import BLOG from '@/blog.config'
 import ExternalPlugins from '@/components/ExternalPlugins'
 import SEO from '@/components/SEO'
-import { zhCN } from '@clerk/localizations'
+import { shouldLoadClerk } from '@/lib/auth/shouldLoadClerk'
+import { siteConfig } from '@/lib/config'
 import dynamic from 'next/dynamic'
-// import { ClerkProvider } from '@clerk/nextjs'
-const ClerkProvider = dynamic(() =>
-  import('@clerk/nextjs').then(m => m.ClerkProvider)
+const ClerkAppProvider = dynamic(
+  () => import('@/components/auth/ClerkAppProvider')
 )
 const AppErrorBoundary = ErrorHandler.createErrorBoundary(
-  <div style={{ padding: '2rem', textAlign: 'center', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-    <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Something went wrong</h1>
-    <p style={{ color: '#666', marginBottom: '1.5rem' }}>An unexpected error occurred. Please refresh the page.</p>
-    <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1.5rem', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px', background: 'transparent' }}>Refresh</button>
+  <div
+    style={{
+      padding: '2rem',
+      textAlign: 'center',
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+      Something went wrong
+    </h1>
+    <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+      An unexpected error occurred. Please refresh the page.
+    </p>
+    <button
+      onClick={() => window.location.reload()}
+      style={{
+        padding: '0.5rem 1.5rem',
+        cursor: 'pointer',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        background: 'transparent'
+      }}
+    >
+      Refresh
+    </button>
   </div>
 )
 
@@ -50,6 +75,7 @@ const MyApp = ({ Component, pageProps }) => {
   }, [queryTheme, notionTheme, configTheme])
 
   useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return
     const source = queryTheme
       ? 'url:theme'
       : notionTheme
@@ -81,10 +107,24 @@ const MyApp = ({ Component, pageProps }) => {
     [theme]
   )
 
-  const enableClerk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  const content = (
+  const enableClerk = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)
+  const techGrowBlogId = siteConfig(
+    'TECH_GROW_BLOG_ID',
+    '',
+    pageProps?.NOTION_CONFIG
+  )
+  const loadClerk = shouldLoadClerk({
+    enabled: enableClerk,
+    pathname: route.pathname,
+    theme,
+    techGrowBlogId,
+    loadOnPublicPages:
+      process.env.NEXT_PUBLIC_CLERK_LOAD_ON_PUBLIC_PAGES === 'true'
+  })
+
+  const renderContent = auth => (
     <AppErrorBoundary>
-      <GlobalContextProvider {...pageProps}>
+      <GlobalContextProvider {...pageProps} auth={auth}>
         <GLayout {...pageProps}>
           <SEO {...pageProps} />
           <Component {...pageProps} />
@@ -93,14 +133,11 @@ const MyApp = ({ Component, pageProps }) => {
       </GlobalContextProvider>
     </AppErrorBoundary>
   )
-  return (
-    <>
-      {enableClerk ? (
-        <ClerkProvider localization={zhCN}>{content}</ClerkProvider>
-      ) : (
-        content
-      )}
-    </>
+
+  return loadClerk ? (
+    <ClerkAppProvider render={renderContent} />
+  ) : (
+    renderContent()
   )
 }
 

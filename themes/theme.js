@@ -32,7 +32,8 @@ const IndexLayoutLoading = () => (
           {[0, 1].map(item => (
             <div
               key={item}
-              className='flex gap-6 border-t border-gray-300 pt-6 dark:border-gray-800'>
+              className='flex gap-6 border-t border-gray-300 pt-6 dark:border-gray-800'
+            >
               <div className='min-w-0 flex-1 space-y-3'>
                 <div className='h-6 w-4/5 animate-pulse bg-gray-200 dark:bg-gray-800' />
                 <div className='h-4 w-2/3 animate-pulse bg-gray-200 dark:bg-gray-800' />
@@ -53,7 +54,8 @@ const IndexLayoutLoading = () => (
           {[0, 1, 2, 3].map(item => (
             <div
               key={item}
-              className='space-y-4 border-t border-gray-300 pt-5 dark:border-gray-800'>
+              className='space-y-4 border-t border-gray-300 pt-5 dark:border-gray-800'
+            >
               <div className='h-5 w-3/4 animate-pulse bg-gray-200 dark:bg-gray-800' />
               <div className='h-4 w-24 animate-pulse bg-gray-200 dark:bg-gray-800' />
             </div>
@@ -78,7 +80,20 @@ const normalizeThemeName = themeValue => {
   return THEMES.includes(firstTheme) ? firstTheme : BLOG.THEME
 }
 
-const getFallbackThemeName = themeName => {
+const AUTH_LAYOUT_NAMES = new Set([
+  'LayoutDashboard',
+  'LayoutSignIn',
+  'LayoutSignUp'
+])
+
+const getFallbackThemeName = (themeName, layoutName) => {
+  if (
+    AUTH_LAYOUT_NAMES.has(layoutName) &&
+    THEMES.includes('starter') &&
+    themeName !== 'starter'
+  ) {
+    return 'starter'
+  }
   const preferred = normalizeThemeName(BLOG.THEME)
   if (preferred && preferred !== themeName) return preferred
   if (THEMES.includes('example') && themeName !== 'example') return 'example'
@@ -133,7 +148,7 @@ async function resolveThemeLayout(themeName, layoutName, emptyLayout) {
   let Layout = await importThemeLayout(themeName, layoutName)
   if (Layout) return Layout
 
-  const fallback = getFallbackThemeName(themeName)
+  const fallback = getFallbackThemeName(themeName, layoutName)
   if (fallback) {
     Layout = await importThemeLayout(fallback, layoutName)
     if (Layout) {
@@ -144,7 +159,9 @@ async function resolveThemeLayout(themeName, layoutName, emptyLayout) {
     }
   }
 
-  console.warn(`[theme] "${themeName}" missing "${layoutName}", using empty layout.`)
+  console.warn(
+    `[theme] "${themeName}" missing "${layoutName}", using empty layout.`
+  )
   return emptyLayout
 }
 
@@ -169,7 +186,9 @@ export const getThemeConfig = async themeQuery => {
       return cfg
     }
   }
-  console.warn('[theme] No theme configuration could be loaded, using empty config.')
+  console.warn(
+    '[theme] No theme configuration could be loaded, using empty config.'
+  )
   return {}
 }
 
@@ -195,8 +214,7 @@ export const getBaseLayoutByTheme = theme => {
     return baseLayoutCache.get(normalizedTheme)
   }
   const DynamicBaseLayout = dynamic(
-    () =>
-      resolveThemeLayout(normalizedTheme, 'LayoutBase', EmptyBaseLayout),
+    () => resolveThemeLayout(normalizedTheme, 'LayoutBase', EmptyBaseLayout),
     { ssr: true }
   )
   baseLayoutCache.set(normalizedTheme, DynamicBaseLayout)

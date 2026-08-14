@@ -22,14 +22,9 @@ export async function getStaticProps(req) {
 
   delete props.allPages
   return {
-    props,
-    revalidate: process.env.EXPORT
-      ? undefined
-      : siteConfig(
-          'NEXT_REVALIDATE_SECOND',
-          BLOG.NEXT_REVALIDATE_SECOND,
-          props.NOTION_CONFIG
-        )
+    // Authentication shell data changes only when the site is redeployed.
+    // Avoid rebuilding this page from Notion every 60 seconds at request time.
+    props
   }
 }
 
