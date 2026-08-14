@@ -8,8 +8,8 @@ import BLOG from './blog.config'
  * Clerk 身份验证中间件
  */
 export const config = {
-  // 这里设置白名单，防止静态资源被拦截
-  matcher: ['/((?!.*\\..*|_next|/sign-in|/auth).*)', '/', '/(api|trpc)(.*)']
+  // Public pages can be served from the edge cache without Clerk middleware.
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/api/user/:path*']
 }
 
 // 限制登录访问的路由

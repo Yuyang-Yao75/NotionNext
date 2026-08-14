@@ -206,7 +206,13 @@ const ExternalPlugin = props => {
         lang: lang
       })
     }, 500)
-  }, [router])
+  }, [
+    ADSENSE_GOOGLE_ID,
+    lang,
+    props?.allLinkPages,
+    props?.allNavPages,
+    router.asPath
+  ])
 
   useEffect(() => {
     if (!isBrowser || !GLOBAL_JS || GLOBAL_JS.trim() === '') {
@@ -283,7 +289,7 @@ const ExternalPlugin = props => {
         </>
       )}
 
-      {CHATBASE_ID && (
+      {pluginsIdle && CHATBASE_ID && (
         <>
           <script
             id={CHATBASE_ID}
@@ -451,7 +457,12 @@ const ExternalPlugin = props => {
 
       {/* UMAMI 统计 */}
       {UMAMI_ID && (
-        <script async defer src={UMAMI_HOST} data-website-id={UMAMI_ID}></script>
+        <script
+          async
+          defer
+          src={UMAMI_HOST}
+          data-website-id={UMAMI_ID}
+        ></script>
       )}
 
       {/* 谷歌统计 */}

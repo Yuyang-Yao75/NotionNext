@@ -74,7 +74,7 @@ export default async function handler(
       )
     }
   } catch (error) {
-    console.error(error)
+    console.error('Notion OAuth callback failed')
     res.status(500).json({ error: 'Internal Server Error' })
   }
 }
@@ -105,14 +105,20 @@ const fetchToken = async (code: string): Promise<NotionTokenResponse> => {
         }
       }
     )
-    console.log('OAuth身份信息', response.data)
     return {
       status: response.status,
       statusText: response.statusText,
       data: response.data
     }
   } catch (error) {
-    console.error('Error fetching token', error)
+    const requestError = error as {
+      message?: string
+      response?: { status?: number }
+    }
+    console.error('Notion OAuth token exchange failed', {
+      status: requestError.response?.status,
+      message: requestError.message
+    })
     return {
       status: 400,
       statusText: 'failed',
