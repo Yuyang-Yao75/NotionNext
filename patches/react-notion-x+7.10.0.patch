@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-notion-x/build/third-party/collection.js b/node_modules/react-notion-x/build/third-party/collection.js
+--- a/node_modules/react-notion-x/build/third-party/collection.js
++++ b/node_modules/react-notion-x/build/third-party/collection.js
+@@ -4987,7 +4987,9 @@ function PropertyImpl({
+             output = (0, import_format_number.default)()(value);
+             break;
+           case "percent":
+-            output = (0, import_format_number.default)({ suffix: "%" })(value * 100);
++            output = (0, import_format_number.default)({ suffix: "%" })(
++              Number.parseFloat((value * 100).toPrecision(15))
++            );
+             break;
+           case "dollar":
+             output = (0, import_format_number.default)({ prefix: "$", round: 2, padRight: 2 })(

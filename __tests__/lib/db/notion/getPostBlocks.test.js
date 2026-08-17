@@ -1,4 +1,9 @@
-jest.mock('@/lib/db/notion/getNotionAPI', () => ({}))
+jest.mock('@/lib/db/notion/getNotionAPI', () => ({
+  __esModule: true,
+  default: {
+    getSignedFileUrls: jest.fn()
+  }
+}))
 jest.mock('p-limit', () => () => fn => fn())
 jest.mock('notion-utils', () => ({
   getBlockValue: jest.fn(entry => entry?.value?.value || entry?.value || entry)
@@ -7,8 +12,10 @@ jest.mock('notion-utils', () => ({
 import {
   formatNotionBlock,
   hasExpiredSignedUrls,
-  preferStablePdfSignedUrls
+  preferStablePdfSignedUrls,
+  refreshPageIconUrls
 } from '@/lib/db/notion/getPostBlocks'
+import notionAPI from '@/lib/db/notion/getNotionAPI'
 import {
   isExternalVideoEmbedUrl,
   isAppleMusicEmbedUrl,
@@ -16,6 +23,10 @@ import {
 } from '@/lib/db/notion/normalizeExternalMediaBlock'
 
 describe('formatNotionBlock', () => {
+  beforeEach(() => {
+    notionAPI.getSignedFileUrls.mockReset()
+  })
+
   it('detects Apple Music single-track embed URLs', () => {
     expect(
       isAppleMusicEmbedUrl(
@@ -34,9 +45,7 @@ describe('formatNotionBlock', () => {
     const blockValue = {
       type: 'video',
       properties: {
-        source: [
-          ['https://embed.music.apple.com/us/song/neon-blue/324357768']
-        ]
+        source: [['https://embed.music.apple.com/us/song/neon-blue/324357768']]
       }
     }
 
@@ -81,9 +90,11 @@ describe('formatNotionBlock', () => {
           id: 'apple-music-song',
           type: 'video',
           properties: {
-            source: [[
-              'https://embed.music.apple.com/us/song/never-gonna-give-you-up/1559523357?i=1559523359'
-            ]]
+            source: [
+              [
+                'https://embed.music.apple.com/us/song/never-gonna-give-you-up/1559523357?i=1559523359'
+              ]
+            ]
           }
         }
       }
@@ -99,9 +110,11 @@ describe('formatNotionBlock', () => {
           id: 'external-player',
           type: 'video',
           properties: {
-            source: [[
-              'https://www.happinessrailway.com/dplayer.htm?n=https%3A%2F%2Fvip.lz-cdn16.com%2F20230312%2F12364_a86fbcc4%2Findex.m3u8'
-            ]]
+            source: [
+              [
+                'https://www.happinessrailway.com/dplayer.htm?n=https%3A%2F%2Fvip.lz-cdn16.com%2F20230312%2F12364_a86fbcc4%2Findex.m3u8'
+              ]
+            ]
           }
         }
       }
@@ -205,9 +218,11 @@ describe('formatNotionBlock', () => {
           id: 'pdf-block',
           type: 'pdf',
           properties: {
-            source: [[
-              'https://prod-files-secure.s3.us-west-2.amazonaws.com/space/file.pdf'
-            ]]
+            source: [
+              [
+                'https://prod-files-secure.s3.us-west-2.amazonaws.com/space/file.pdf'
+              ]
+            ]
           }
         }
       }
@@ -256,7 +271,11 @@ describe('formatNotionBlock', () => {
             id: 'pdf',
             type: 'pdf',
             properties: {
-              source: [['https://prod-files-secure.s3.us-west-2.amazonaws.com/file.pdf']]
+              source: [
+                [
+                  'https://prod-files-secure.s3.us-west-2.amazonaws.com/file.pdf'
+                ]
+              ]
             }
           }
         }
@@ -268,5 +287,88 @@ describe('formatNotionBlock', () => {
     expect(recordMap.signed_urls.pdf).toBe(
       'https://notion.so/signed/https%3A%2F%2Fprod-files-secure.s3.us-west-2.amazonaws.com%2Ffile.pdf?table=block&id=pdf'
     )
+  })
+
+  it('signs uploaded page icons in inline database rows', async () => {
+    const signedUrl =
+      'https://file.notion.so/f/icon.png?expirationTimestamp=4102444800000'
+    notionAPI.getSignedFileUrls.mockResolvedValue({ signedUrls: [signedUrl] })
+    const recordMap = {
+      block: {
+        row: {
+          value: {
+            id: 'row',
+            type: 'page',
+            format: {
+              page_icon: 'attachment:icon-id:icon.png'
+            }
+          }
+        }
+      }
+    }
+
+    await expect(refreshPageIconUrls(recordMap)).resolves.toBe(true)
+
+    expect(notionAPI.getSignedFileUrls).toHaveBeenCalledWith([
+      {
+        permissionRecord: { table: 'block', id: 'row' },
+        url: 'attachment:icon-id:icon.png'
+      }
+    ])
+    expect(recordMap.block.row.value.format).toMatchObject({
+      page_icon: signedUrl,
+      page_icon_source: 'attachment:icon-id:icon.png'
+    })
+  })
+
+  it('keeps a non-expiring page icon without requesting a new signature', async () => {
+    const recordMap = {
+      block: {
+        row: {
+          value: {
+            id: 'row',
+            type: 'page',
+            format: {
+              page_icon: 'https://img.notionusercontent.com/icon.png'
+            }
+          }
+        }
+      }
+    }
+
+    await expect(refreshPageIconUrls(recordMap)).resolves.toBe(false)
+    expect(notionAPI.getSignedFileUrls).not.toHaveBeenCalled()
+  })
+
+  it('renews an expired cached page icon from its original source', async () => {
+    const refreshedUrl =
+      'https://file.notion.so/f/icon.png?expirationTimestamp=4102444800000'
+    notionAPI.getSignedFileUrls.mockResolvedValue({
+      signedUrls: [refreshedUrl]
+    })
+    const recordMap = {
+      block: {
+        row: {
+          value: {
+            id: 'row',
+            type: 'page',
+            format: {
+              page_icon:
+                'https://file.notion.so/f/icon.png?expirationTimestamp=1',
+              page_icon_source: 'attachment:icon-id:icon.png'
+            }
+          }
+        }
+      }
+    }
+
+    await expect(refreshPageIconUrls(recordMap)).resolves.toBe(true)
+    expect(notionAPI.getSignedFileUrls).toHaveBeenCalledWith([
+      {
+        permissionRecord: { table: 'block', id: 'row' },
+        url: 'attachment:icon-id:icon.png'
+      }
+    ])
+    expect(recordMap.block.row.value.format.page_icon).toBe(refreshedUrl)
   })
 })
