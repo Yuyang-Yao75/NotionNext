@@ -65,4 +65,26 @@ describe('getNotionAPI', () => {
       })
     )
   })
+
+  it('ignores stale Vercel database view and property mappings', () => {
+    process.env.NEXT_PUBLIC_NOTION_INDEX = '3'
+    process.env.NEXT_PUBLIC_NOTION_PROPERTY_TYPE = 'legacy_type'
+    process.env.NEXT_PUBLIC_NOTION_PROPERTY_STATUS = 'legacy_status'
+    process.env.NEXT_PUBLIC_NOTION_PROPERTY_STATUS_PUBLISH = 'legacy_published'
+    process.env.NEXT_PUBLIC_NOTION_PROPERTY_SLUG = 'legacy_slug'
+    process.env.NEXT_PUBLIC_NOTION_PROPERTY_ICON = 'legacy_icon'
+
+    const BLOG = require('@/blog.config')
+
+    expect(BLOG.NOTION_INDEX).toBe(0)
+    expect(BLOG.NOTION_PROPERTY_NAME).toEqual(
+      expect.objectContaining({
+        type: 'type',
+        status: 'status',
+        status_publish: 'Published',
+        slug: 'slug',
+        icon: 'icon'
+      })
+    )
+  })
 })
