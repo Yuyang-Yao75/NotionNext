@@ -24,6 +24,9 @@ concurrency:
 
 jobs:
   deploy:
+    # This Cloudflare Pages project belongs to the upstream repository.
+    # Forks do not have its credentials and should not attempt this deployment.
+    if: ${{ github.repository == 'notionnext-org/NotionNext' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
