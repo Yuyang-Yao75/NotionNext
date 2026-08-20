@@ -49,7 +49,7 @@ describe('getNotionAPI', () => {
     )
   })
 
-  it('keeps a non-shared custom Notion API host', async () => {
+  it('ignores a custom environment API host for this dedicated site', async () => {
     process.env.API_BASE_URL = 'https://notion-proxy.example.com/api/v3/'
     const NotionAPI = jest.fn().mockImplementation(() => ({
       getPage: jest.fn().mockResolvedValue({})
@@ -61,7 +61,7 @@ describe('getNotionAPI', () => {
 
     expect(NotionAPI).toHaveBeenCalledWith(
       expect.objectContaining({
-        apiBaseUrl: 'https://notion-proxy.example.com/api/v3'
+        apiBaseUrl: 'https://yyyao.notion.site/api/v3'
       })
     )
   })
