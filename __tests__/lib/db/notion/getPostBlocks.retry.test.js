@@ -1,9 +1,11 @@
 const mockGetPage = jest.fn()
+const mockSearch = jest.fn()
 const mockGetDataFromCache = jest.fn()
 const mockDelCacheData = jest.fn()
 
 jest.mock('@/lib/db/notion/getNotionAPI', () => ({
-  getPage: (...args) => mockGetPage(...args)
+  getPage: (...args) => mockGetPage(...args),
+  search: (...args) => mockSearch(...args)
 }))
 jest.mock('@/lib/cache/cache_manager', () => ({
   delCacheData: (...args) => mockDelCacheData(...args),
@@ -26,6 +28,7 @@ describe('getPageWithRetry', () => {
     jest.clearAllMocks()
     mockGetDataFromCache.mockResolvedValue(null)
     mockDelCacheData.mockResolvedValue(undefined)
+    mockSearch.mockResolvedValue({ recordMap: { block: {} } })
   })
 
   it('uses capped exponential backoff', () => {
@@ -69,6 +72,82 @@ describe('getPageWithRetry', () => {
       concurrency: 1
     })
     expect(validate).toHaveBeenCalledWith(recordMap)
+  })
+
+  it('recovers an empty primary view from public search results', async () => {
+    const recordMap = {
+      block: {
+        site: {
+          value: {
+            id: 'site',
+            type: 'collection_view_page',
+            collection_id: 'collection',
+            view_ids: ['primary-view']
+          }
+        }
+      },
+      collection_query: {
+        collection: {
+          'primary-view': {
+            collection_group_results: { blockIds: [] }
+          }
+        }
+      }
+    }
+    mockGetPage.mockResolvedValue(recordMap)
+    mockSearch.mockResolvedValue({
+      recordMap: {
+        block: {
+          row: {
+            value: {
+              id: 'row',
+              type: 'page',
+              parent_table: 'collection',
+              parent_id: 'collection'
+            }
+          },
+          nested: {
+            value: {
+              id: 'nested',
+              type: 'text',
+              parent_id: 'row'
+            }
+          }
+        }
+      }
+    })
+    const validate = jest.fn(pageData => {
+      const ids =
+        pageData.collection_query.collection['primary-view']
+          .collection_group_results.blockIds
+      if (ids.length === 0) {
+        const error = new Error('incomplete')
+        error.code = 'NOTION_INCOMPLETE_DATABASE_RESPONSE'
+        throw error
+      }
+    })
+
+    await expect(
+      getPageWithRetry(
+        'site',
+        'test',
+        1,
+        'cache-key',
+        1,
+        validate,
+        jest.fn()
+      )
+    ).resolves.toBe(recordMap)
+
+    expect(mockSearch).toHaveBeenCalledWith({
+      ancestorId: 'collection',
+      query: '',
+      limit: 100
+    })
+    expect(
+      recordMap.collection_query.collection['primary-view']
+        .collection_group_results.blockIds
+    ).toEqual(['row'])
   })
 
   it('throws instead of returning an empty result after all attempts fail', async () => {
