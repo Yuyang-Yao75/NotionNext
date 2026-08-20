@@ -5,7 +5,18 @@ import {
 
 describe('validateSiteRecordMap', () => {
   const completeRecordMap = {
-    block: { root: { value: { id: 'root', type: 'collection_view_page' } } },
+    block: {
+      site: {
+        value: {
+          value: {
+            id: 'site',
+            type: 'collection_view_page',
+            collection_id: 'collection',
+            view_ids: ['view-a', 'view-b']
+          }
+        }
+      }
+    },
     collection_view: {
       'view-a': { value: { id: 'view-a' } },
       'view-b': { value: { id: 'view-b' } }
@@ -47,5 +58,14 @@ describe('validateSiteRecordMap', () => {
     expect(() => assertCompleteSiteRecordMap({}, 'site')).toThrow(
       'returned no blocks'
     )
+  })
+
+  it('rejects a root page that is not a database', () => {
+    expect(() =>
+      assertCompleteSiteRecordMap(
+        { block: { site: { value: { id: 'site', type: 'page' } } } },
+        'site'
+      )
+    ).toThrow('is not a complete database')
   })
 })
