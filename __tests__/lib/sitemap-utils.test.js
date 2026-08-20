@@ -27,6 +27,24 @@ describe('sitemap-utils', () => {
         'https://example.com'
       )
     })
+
+    it('upgrades a public HTTP canonical URL to HTTPS', () => {
+      expect(normalizeSiteUrl('http://youngyyy.com/')).toBe(
+        'https://youngyyy.com'
+      )
+      expect(normalizeSiteUrl('//youngyyy.com/')).toBe(
+        'https://youngyyy.com'
+      )
+    })
+
+    it.each([
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://192.168.1.10:3000',
+      'http://172.20.0.2:3000'
+    ])('keeps local development URL %s on HTTP', url => {
+      expect(normalizeSiteUrl(url)).toBe(url)
+    })
   })
 
   describe('normalizeSitemapLocale', () => {

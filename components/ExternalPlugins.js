@@ -263,7 +263,7 @@ const ExternalPlugin = props => {
       {ANALYTICS_ACKEE_TRACKER && <Ackee />}
       {ANALYTICS_GOOGLE_ID && <Gtag />}
       {ANALYTICS_VERCEL && <Analytics />}
-      {ANALYTICS_BUSUANZI_ENABLE && <Busuanzi />}
+      {pluginsIdle && ANALYTICS_BUSUANZI_ENABLE && <Busuanzi />}
       {FACEBOOK_APP_ID && FACEBOOK_PAGE_ID && <Messenger />}
       {FIREWORKS && <Fireworks />}
       {SAKURA && <Sakura />}

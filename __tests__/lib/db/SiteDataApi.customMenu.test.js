@@ -173,4 +173,55 @@ describe('getCustomMenu', () => {
 
     expect(menus[0].href).toBe('/draft')
   })
+
+  it('builds submenu state without mutating or reusing cached menu objects', () => {
+    const collectionData = [
+      {
+        id: 'menu-about',
+        type: 'Menu',
+        status: 'Published',
+        title: 'About',
+        slug: '/about',
+        href: '/about',
+        subMenus: [
+          {
+            id: 'stale-category',
+            title: 'Stale category',
+            href: '/category'
+          }
+        ]
+      },
+      {
+        id: 'menu-archive',
+        type: 'Menu',
+        status: 'Published',
+        title: 'Archive',
+        slug: '#',
+        href: '#'
+      },
+      {
+        id: 'submenu-history',
+        type: 'SubMenu',
+        status: 'Published',
+        title: 'History',
+        slug: '/archive',
+        href: '/archive'
+      }
+    ]
+    const originalCollectionData = structuredClone(collectionData)
+
+    const firstMenus = getCustomMenu({
+      collectionData,
+      sourcePageSlugs: new Map()
+    })
+    const secondMenus = getCustomMenu({
+      collectionData,
+      sourcePageSlugs: new Map()
+    })
+
+    expect(firstMenus[0].subMenus).toBeUndefined()
+    expect(firstMenus[1].subMenus.map(item => item.title)).toEqual(['History'])
+    expect(secondMenus).toEqual(firstMenus)
+    expect(collectionData).toEqual(originalCollectionData)
+  })
 })

@@ -3,7 +3,8 @@ const CONFIG = {
   XUHOME_HERO_ENABLE: true, // 首页显示 Hero 区
   XUHOME_HERO_TITLE: process.env.NEXT_PUBLIC_XUHOME_HERO_TITLE || '',
   XUHOME_HERO_BIO: process.env.NEXT_PUBLIC_XUHOME_HERO_BIO || '',
-  XUHOME_HERO_TEXTS: ['Hello.', 'Welcome.', 'Enjoy reading.'], // 打字机轮播文字
+  // 留空时复用全局 GREETING_WORDS；设置后作为 XuHome 专属覆盖。
+  XUHOME_HERO_TEXTS: process.env.NEXT_PUBLIC_XUHOME_HERO_TEXTS || '',
   XUHOME_HERO_TITLE_COLOR: '#0284c7', // Hero 标题颜色
   XUHOME_HERO_BIO_COLOR: '#475569', // Hero 简介颜色
   XUHOME_HERO_TYPE_SPEED: 80, // 打字速度（毫秒/字）

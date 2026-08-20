@@ -150,6 +150,102 @@ describe('getPageWithRetry', () => {
     ).toEqual(['row'])
   })
 
+  it('preserves the primary view row order when public search is unordered', async () => {
+    const recordMap = {
+      block: {
+        site: {
+          value: {
+            id: 'site',
+            type: 'collection_view_page',
+            collection_id: 'collection',
+            view_ids: ['primary-view']
+          }
+        }
+      },
+      collection_view: {
+        'primary-view': {
+          value: {
+            value: {
+              id: 'primary-view',
+              page_sort: ['about', 'archive', 'category', 'history']
+            }
+          }
+        }
+      },
+      collection_query: {
+        collection: {
+          'primary-view': {
+            collection_group_results: { blockIds: [] }
+          }
+        }
+      }
+    }
+    mockGetPage.mockResolvedValue(recordMap)
+    mockSearch.mockResolvedValue({
+      recordMap: {
+        block: {
+          about: {
+            value: {
+              id: 'about',
+              type: 'page',
+              parent_table: 'collection',
+              parent_id: 'collection'
+            }
+          },
+          category: {
+            value: {
+              id: 'category',
+              type: 'page',
+              parent_table: 'collection',
+              parent_id: 'collection'
+            }
+          },
+          archive: {
+            value: {
+              id: 'archive',
+              type: 'page',
+              parent_table: 'collection',
+              parent_id: 'collection'
+            }
+          },
+          history: {
+            value: {
+              id: 'history',
+              type: 'page',
+              parent_table: 'collection',
+              parent_id: 'collection'
+            }
+          }
+        }
+      }
+    })
+    const validate = jest.fn(pageData => {
+      const ids =
+        pageData.collection_query.collection['primary-view']
+          .collection_group_results.blockIds
+      if (ids.length === 0) {
+        const error = new Error('incomplete')
+        error.code = 'NOTION_INCOMPLETE_DATABASE_RESPONSE'
+        throw error
+      }
+    })
+
+    await getPageWithRetry(
+      'site',
+      'test',
+      1,
+      'cache-key',
+      1,
+      validate,
+      jest.fn()
+    )
+
+    expect(
+      recordMap.collection_query.collection['primary-view']
+        .collection_group_results.blockIds
+    ).toEqual(['about', 'archive', 'category', 'history'])
+  })
+
   it('throws instead of returning an empty result after all attempts fail', async () => {
     const sleep = jest.fn().mockResolvedValue(undefined)
     mockGetPage.mockRejectedValue(new Error('ECONNRESET'))

@@ -7,6 +7,31 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 
+export const getSeoResourceHints = ({ hasWebFontUrl, analyticsGoogleId }) => {
+  const hints = []
+
+  if (hasWebFontUrl) {
+    hints.push(
+      { rel: 'dns-prefetch', href: '//fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      {
+        rel: 'preconnect',
+        href: 'https://fonts.gstatic.com',
+        crossOrigin: 'anonymous'
+      }
+    )
+  }
+
+  if (analyticsGoogleId) {
+    hints.push(
+      { rel: 'dns-prefetch', href: '//www.google-analytics.com' },
+      { rel: 'dns-prefetch', href: '//www.googletagmanager.com' }
+    )
+  }
+
+  return hints
+}
+
 /**
  * 页面的Head头，有用于SEO
  * @param {*} param0
@@ -27,6 +52,15 @@ const SEO = props => {
   const hasWebFontUrl = Array.isArray(webFontUrl)
     ? webFontUrl.filter(Boolean).length > 0
     : Boolean(webFontUrl)
+  const ANALYTICS_GOOGLE_ID = siteConfig(
+    'ANALYTICS_GOOGLE_ID',
+    null,
+    NOTION_CONFIG
+  )
+  const resourceHints = getSeoResourceHints({
+    hasWebFontUrl,
+    analyticsGoogleId: ANALYTICS_GOOGLE_ID
+  })
 
   useEffect(() => {
     if (!hasWebFontUrl) return
@@ -249,16 +283,9 @@ const SEO = props => {
       />
 
       {/* DNS预取和预连接 */}
-      {hasWebFontUrl && <link rel='dns-prefetch' href='//fonts.googleapis.com' />}
-      <link rel='dns-prefetch' href='//www.google-analytics.com' />
-      <link rel='dns-prefetch' href='//www.googletagmanager.com' />
-      {hasWebFontUrl && (
-        <link
-          rel='preconnect'
-          href='https://fonts.gstatic.com'
-          crossOrigin='anonymous'
-        />
-      )}
+      {resourceHints.map(hint => (
+        <link key={`${hint.rel}:${hint.href}`} {...hint} />
+      ))}
 
       {children}
     </Head>

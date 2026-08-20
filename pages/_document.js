@@ -47,8 +47,8 @@ class MyDocument extends Document {
     return (
       <Html lang={BLOG.LANG}>
         <Head>
-          <link rel='preconnect' href='https://images.unsplash.com' />
-          <link rel='dns-prefetch' href='//images.unsplash.com' />
+          <link rel='preconnect' href='https://www.notion.so' />
+          <link rel='dns-prefetch' href='//www.notion.so' />
 
           {/* 预加载字体 */}
           {BLOG.FONT_AWESOME && (

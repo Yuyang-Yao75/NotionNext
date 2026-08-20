@@ -6,12 +6,22 @@ import { cleanCache } from '@/lib/cache/local_file_cache'
  * @param {*} res
  */
 export default function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0')
+
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST')
     return res.status(405).json({ status: 'error', message: 'Method not allowed' })
   }
 
   const token = process.env.CACHE_REVALIDATION_TOKEN
-  if (token && req.headers.authorization !== `Bearer ${token}`) {
+  if (!token) {
+    return res.status(503).json({
+      status: 'error',
+      message: 'Cache revalidation is disabled'
+    })
+  }
+
+  if (req.headers.authorization !== `Bearer ${token}`) {
     return res.status(401).json({ status: 'error', message: 'Unauthorized' })
   }
 

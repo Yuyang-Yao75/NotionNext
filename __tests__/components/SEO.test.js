@@ -1,4 +1,4 @@
-import { generateStructuredData } from '@/components/SEO'
+import { generateStructuredData, getSeoResourceHints } from '@/components/SEO'
 
 describe('SEO structured data', () => {
   const siteInfo = {
@@ -58,5 +58,41 @@ describe('SEO structured data', () => {
       name: 'Example Blog',
       url: 'https://example.com'
     })
+  })
+})
+
+describe('SEO resource hints', () => {
+  it('warms font origins only when web fonts are configured', () => {
+    expect(
+      getSeoResourceHints({ hasWebFontUrl: true, analyticsGoogleId: '' })
+    ).toEqual(
+      expect.arrayContaining([
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        {
+          rel: 'preconnect',
+          href: 'https://fonts.gstatic.com',
+          crossOrigin: 'anonymous'
+        }
+      ])
+    )
+  })
+
+  it('does not contact Google Analytics origins when analytics is disabled', () => {
+    const hints = getSeoResourceHints({
+      hasWebFontUrl: false,
+      analyticsGoogleId: ''
+    })
+    expect(hints).toEqual([])
+  })
+
+  it('adds Google Analytics DNS hints only when it is configured', () => {
+    const hints = getSeoResourceHints({
+      hasWebFontUrl: false,
+      analyticsGoogleId: 'G-TEST'
+    })
+    expect(hints).toEqual([
+      { rel: 'dns-prefetch', href: '//www.google-analytics.com' },
+      { rel: 'dns-prefetch', href: '//www.googletagmanager.com' }
+    ])
   })
 })

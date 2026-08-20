@@ -4,6 +4,7 @@ const BLOG = require('./blog.config')
 const { extractLangPrefix } = require('./lib/utils/pageId')
 const { isExport } = require('./lib/utils/buildMode')
 const { getStaticPageGenerationTimeoutSec } = require('./lib/build/buildEnv')
+const { getHttpHeaderRules } = require('./lib/config/httpHeaders')
 
 // 打包时是否分析代码
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
@@ -324,90 +325,7 @@ const nextConfig = {
       },
   headers: process.env.EXPORT
     ? undefined
-    : () => {
-        return [
-          {
-            source: '/vendor/fontawesome/:path*',
-            headers: [
-              {
-                key: 'Cache-Control',
-                value: 'public, max-age=31536000, immutable'
-              }
-            ]
-          },
-          {
-            source: '/bg_image.jpg',
-            headers: [
-              {
-                key: 'Cache-Control',
-                value:
-                  'public, max-age=86400, s-maxage=31536000, stale-while-revalidate=604800'
-              }
-            ]
-          },
-          {
-            source: '/:path*{/}?',
-            headers: [
-              {
-                key: 'X-Content-Type-Options',
-                value: 'nosniff'
-              },
-              {
-                key: 'Referrer-Policy',
-                value: 'strict-origin-when-cross-origin'
-              }
-              // 安全头部 相关配置，谨慎开启
-              //   { key: 'X-Frame-Options', value: 'DENY' },
-              //   { key: 'X-Content-Type-Options', value: 'nosniff' },
-              //   { key: 'X-XSS-Protection', value: '1; mode=block' },
-              //   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-              //   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-              //   {
-              //     key: 'Strict-Transport-Security',
-              //     value: 'max-age=31536000; includeSubDomains; preload'
-              //   },
-              //   {
-              //     key: 'Content-Security-Policy',
-              //     value: [
-              //       "default-src 'self'",
-              //       "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googleapis.com *.gstatic.com *.google-analytics.com *.googletagmanager.com",
-              //       "style-src 'self' 'unsafe-inline' *.googleapis.com *.gstatic.com",
-              //       "img-src 'self' data: blob: *.notion.so *.unsplash.com *.githubusercontent.com *.gravatar.com",
-              //       "font-src 'self' *.googleapis.com *.gstatic.com",
-              //       "connect-src 'self' *.google-analytics.com *.googletagmanager.com",
-              //       "frame-src 'self' *.youtube.com *.vimeo.com",
-              //       "object-src 'none'",
-              //       "base-uri 'self'",
-              //       "form-action 'self'"
-              //     ].join('; ')
-              //   },
-
-              //   // CORS 配置（更严格）
-              //   { key: 'Access-Control-Allow-Credentials', value: 'false' },
-              //   {
-              //     key: 'Access-Control-Allow-Origin',
-              //     value: process.env.NODE_ENV === 'production'
-              //       ? siteConfig('LINK') || 'https://yourdomain.com'
-              //       : '*'
-              //   },
-              //   { key: 'Access-Control-Max-Age', value: '86400' }
-            ]
-          }
-          //   {
-          //     source: '/api/:path*',
-          //     headers: [
-          //       // API 特定的安全头部
-          //       { key: 'X-Frame-Options', value: 'DENY' },
-          //       { key: 'X-Content-Type-Options', value: 'nosniff' },
-          //       { key: 'Cache-Control', value: 'no-store, max-age=0' },
-          //       {
-          //         key: 'Access-Control-Allow-Methods',
-          //         value: 'GET,POST,PUT,DELETE,OPTIONS'
-          //       }
-          //     ]
-          //   }
-        ]
-      },
+    : () => getHttpHeaderRules(),
   webpack: (config, { dev, isServer }) => {
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),

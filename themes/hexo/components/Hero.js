@@ -2,44 +2,69 @@
 import LazyImage from '@/components/LazyImage'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
+import { resolveGreetingWords } from '@/lib/site/greetingWords'
 import { loadExternalResource } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import CONFIG from '../config'
 import NavButtonGroup from './NavButtonGroup'
-
-let wrapperTop = 0
 
 /**
  * 顶部全屏大图
  * @returns
  */
 const Hero = props => {
-  const [typed, changeType] = useState()
+  const typedElementRef = useRef(null)
+  const typedInstanceRef = useRef(null)
+  const typedOptionsRef = useRef(null)
+  const wrapperTopRef = useRef(0)
   const { siteInfo } = props
   const { locale } = useGlobal()
   const scrollToWrapper = () => {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
-    window.scrollTo({ top: wrapperTop - 2 * rem, behavior: 'smooth' })
+    window.scrollTo({ top: wrapperTopRef.current - 2 * rem, behavior: 'smooth' })
   }
 
-  const GREETING_WORDS = siteConfig('GREETING_WORDS').split(',')
-  const GREETING_WORDS_TYPE_SPEED = Number(siteConfig('GREETING_WORDS_TYPE_SPEED')) || 200
-  const GREETING_WORDS_BACK_SPEED = Number(siteConfig('GREETING_WORDS_BACK_SPEED')) || 100
+  if (!typedOptionsRef.current) {
+    typedOptionsRef.current = {
+      strings: resolveGreetingWords({
+        sharedWords: siteConfig('GREETING_WORDS'),
+        fallbackWords: siteConfig('HEXO_HOME_BANNER_GREETINGS', [], CONFIG)
+      }),
+      typeSpeed: Number(siteConfig('GREETING_WORDS_TYPE_SPEED')) || 200,
+      backSpeed: Number(siteConfig('GREETING_WORDS_BACK_SPEED')) || 100,
+      backDelay: 400,
+      showCursor: true,
+      smartBackspace: true
+    }
+  }
+
   useEffect(() => {
+    let cancelled = false
+    let animationFrameId = null
+
+    const updateHeaderHeight = () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId)
+      }
+      animationFrameId = requestAnimationFrame(() => {
+        const wrapperElement = document.getElementById('wrapper')
+        wrapperTopRef.current = wrapperElement?.offsetTop || 0
+      })
+    }
+
     updateHeaderHeight()
 
-    if (!typed && window && document.getElementById('typed')) {
+    if (typedElementRef.current) {
       loadExternalResource('/js/typed.min.js', 'js').then(() => {
-        if (window.Typed) {
-          changeType(
-            new window.Typed('#typed', {
-              strings: GREETING_WORDS,
-              typeSpeed: GREETING_WORDS_TYPE_SPEED,
-              backSpeed: GREETING_WORDS_BACK_SPEED,
-              backDelay: 400,
-              showCursor: true,
-              smartBackspace: true
-            })
+        if (
+          !cancelled &&
+          window.Typed &&
+          typedElementRef.current &&
+          !typedInstanceRef.current
+        ) {
+          typedInstanceRef.current = new window.Typed(
+            typedElementRef.current,
+            typedOptionsRef.current
           )
         }
       })
@@ -47,16 +72,15 @@ const Hero = props => {
 
     window.addEventListener('resize', updateHeaderHeight)
     return () => {
+      cancelled = true
       window.removeEventListener('resize', updateHeaderHeight)
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId)
+      }
+      typedInstanceRef.current?.destroy?.()
+      typedInstanceRef.current = null
     }
-  })
-
-  function updateHeaderHeight() {
-    requestAnimationFrame(() => {
-      const wrapperElement = document.getElementById('wrapper')
-      wrapperTop = wrapperElement?.offsetTop
-    })
-  }
+  }, [])
 
   return (
     <header
@@ -70,7 +94,7 @@ const Hero = props => {
         </div>
         {/* 站点欢迎语 */}
         <div className='mt-2 h-12 items-center text-center font-light shadow-text text-lg'>
-          <span id='typed' />
+          <span id='typed' ref={typedElementRef} />
         </div>
 
         {/* 首页导航大按钮 */}
@@ -82,7 +106,7 @@ const Hero = props => {
         <div
           onClick={scrollToWrapper}
           className='z-10 cursor-pointer w-full text-center py-4 text-3xl absolute bottom-10 text-white [text-shadow:0_0_0.1em_black,0_0_0.2em_black]'>
-          <div className='opacity-70 animate-bounce text-xs'> 
+          <div className='opacity-70 animate-bounce text-xs'>
             {siteConfig('HEXO_SHOW_START_READING', null, CONFIG) &&
               locale.COMMON.START_READING}
           </div>
