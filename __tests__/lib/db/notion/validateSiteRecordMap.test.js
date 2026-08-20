@@ -15,7 +15,8 @@ describe('validateSiteRecordMap', () => {
             view_ids: ['view-a', 'view-b']
           }
         }
-      }
+      },
+      row: { value: { id: 'row', type: 'page' } }
     },
     collection_view: {
       'view-a': { value: { id: 'view-a' } },
@@ -23,8 +24,8 @@ describe('validateSiteRecordMap', () => {
     },
     collection_query: {
       collection: {
-        'view-a': { collection_group_results: {} },
-        'view-b': { collection_group_results: {} }
+        'view-a': { collection_group_results: { blockIds: ['row'] } },
+        'view-b': { collection_group_results: { blockIds: ['row'] } }
       }
     }
   }
@@ -41,7 +42,7 @@ describe('validateSiteRecordMap', () => {
       ...completeRecordMap,
       collection_query: {
         collection: {
-          'view-a': { collection_group_results: {} }
+          'view-a': { collection_group_results: { blockIds: ['row'] } }
         }
       }
     }
@@ -67,5 +68,32 @@ describe('validateSiteRecordMap', () => {
         'site'
       )
     ).toThrow('is not a complete database')
+  })
+
+  it('rejects collection queries that silently return zero rows', () => {
+    const emptyQueries = {
+      ...completeRecordMap,
+      collection_query: {
+        collection: {
+          'view-a': { collection_group_results: { blockIds: [] } },
+          'view-b': { collection_group_results: { blockIds: [] } }
+        }
+      }
+    }
+
+    expect(() => assertCompleteSiteRecordMap(emptyQueries, 'site')).toThrow(
+      'returned zero database rows'
+    )
+  })
+
+  it('rejects query rows that are missing from the block map', () => {
+    const missingRow = {
+      ...completeRecordMap,
+      block: { site: completeRecordMap.block.site }
+    }
+
+    expect(() => assertCompleteSiteRecordMap(missingRow, 'site')).toThrow(
+      'omitted 1 queried database rows'
+    )
   })
 })
