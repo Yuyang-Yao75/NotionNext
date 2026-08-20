@@ -82,8 +82,24 @@ describe('validateSiteRecordMap', () => {
     }
 
     expect(() => assertCompleteSiteRecordMap(emptyQueries, 'site')).toThrow(
-      'returned zero database rows'
+      'returned zero rows for the primary database view'
     )
+  })
+
+  it('rejects a partial response when only an auxiliary view has rows', () => {
+    const partialPrimaryView = {
+      ...completeRecordMap,
+      collection_query: {
+        collection: {
+          'view-a': { collection_group_results: { blockIds: [] } },
+          'view-b': { collection_group_results: { blockIds: ['row'] } }
+        }
+      }
+    }
+
+    expect(() =>
+      assertCompleteSiteRecordMap(partialPrimaryView, 'site')
+    ).toThrow('returned zero rows for the primary database view')
   })
 
   it('rejects query rows that are missing from the block map', () => {

@@ -65,7 +65,8 @@ describe('getPageWithRetry', () => {
     )
 
     expect(mockGetPage).toHaveBeenCalledWith('site', {
-      throwOnCollectionErrors: true
+      throwOnCollectionErrors: true,
+      concurrency: 1
     })
     expect(validate).toHaveBeenCalledWith(recordMap)
   })
