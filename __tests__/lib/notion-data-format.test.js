@@ -136,7 +136,7 @@ describe('Notion data format compatibility', () => {
     expect(pageIds).toEqual(['page_1', 'page_2'])
   })
 
-  it('does not merge reducerResults when collection group results are explicitly empty', () => {
+  it('does not recover page_sort when reducer results explicitly exclude the page', () => {
     const pageIds = getAllPageIds(
       {
         collection_1: {
@@ -169,7 +169,7 @@ describe('Notion data format compatibility', () => {
     expect(pageIds).toEqual([])
   })
 
-  it('does not fall back to page_sort when the selected view query is empty', () => {
+  it('recovers page_sort when the selected view query is unexpectedly empty', () => {
     const pageIds = getAllPageIds(
       {
         collection_1: {
@@ -194,7 +194,7 @@ describe('Notion data format compatibility', () => {
       {}
     )
 
-    expect(pageIds).toEqual([])
+    expect(pageIds).toEqual(['filtered_out_page'])
   })
 
   it('matches selected view query when collection ids use different uuid formats', () => {

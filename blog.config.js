@@ -6,8 +6,11 @@ const BLOG = {
   // 这是本站专属仓库，固定使用已验证可返回完整数据库的 Notion 站点 API。
   // 不再接受 Vercel 中遗留的 API_BASE_URL 覆盖，避免部署成功但首页为空。
   API_BASE_URL: DEDICATED_NOTION_API_BASE_URL,
-  SITE_DATA_MIN_POSTS: 0, // 临时诊断部署完成后恢复为 1
-  SITE_DATA_REQUIRE_CONFIG: false, // 临时诊断部署完成后恢复为 true
+  SITE_DATA_MIN_POSTS: 1,
+  SITE_DATA_REQUIRE_CONFIG: true,
+  // Notion occasionally returns an empty collection query from Vercel while
+  // retaining the view's page_sort list. Recover only that empty-view case.
+  NOTION_ALLOW_EMPTY_VIEW_PAGE_SORT_FALLBACK: true,
   // Important page_id！！！Duplicate Template from  https://tanghh.notion.site/02ab3b8678004aa69e9e415905ef32a5
   NOTION_PAGE_ID:
     process.env.NOTION_PAGE_ID ||
