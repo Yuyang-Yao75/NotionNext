@@ -42,9 +42,18 @@ jobs:
           fi
 
           if ! git merge --no-edit upstream/main; then
-            echo "::error::Upstream merge has conflicts in the files listed below."
-            git diff --name-only --diff-filter=U
-            exit 1
+            mapfile -t conflict_files < <(git diff --name-only --diff-filter=U)
+
+            if [[ ${#conflict_files[@]} -eq 1 && "${conflict_files[0]}" == ".github/workflows/sync.yaml" ]]; then
+              echo "Only the fork-specific sync workflow conflicted; keeping the fork version."
+              git checkout --ours -- .github/workflows/sync.yaml
+              git add .github/workflows/sync.yaml
+              git commit --no-edit
+            else
+              echo "::error::Upstream merge has conflicts that require manual review."
+              printf '%s\n' "${conflict_files[@]}"
+              exit 1
+            fi
           fi
 
           git push origin HEAD:main
