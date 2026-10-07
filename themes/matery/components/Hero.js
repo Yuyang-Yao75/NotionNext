@@ -51,19 +51,21 @@ const Hero = props => {
     updateHeaderHeight()
 
     if (typedElementRef.current) {
-      loadExternalResource('/js/typed.min.js', 'js').then(() => {
-        if (
-          !cancelled &&
-          window.Typed &&
-          typedElementRef.current &&
-          !typedInstanceRef.current
-        ) {
-          typedInstanceRef.current = new window.Typed(
-            typedElementRef.current,
-            typedOptionsRef.current
-          )
-        }
-      })
+      loadExternalResource('/js/typed.min.js', 'js')
+        .then(() => {
+          if (
+            !cancelled &&
+            window.Typed &&
+            typedElementRef.current &&
+            !typedInstanceRef.current
+          ) {
+            typedInstanceRef.current = new window.Typed(
+              typedElementRef.current,
+              typedOptionsRef.current
+            )
+          }
+        })
+        .catch(() => {})
     }
 
     window.addEventListener('resize', updateHeaderHeight)
@@ -82,7 +84,8 @@ const Hero = props => {
     <header
       id='header'
       style={{ zIndex: 1 }}
-      className=' w-full h-screen relative bg-black'>
+      className=' w-full h-screen relative bg-black'
+    >
       <div className='text-white absolute flex flex-col h-full items-center justify-center w-full '>
         {/* 站点标题 */}
         <div className='text-4xl md:text-5xl shadow-text'>
@@ -97,7 +100,8 @@ const Hero = props => {
           onClick={() => {
             window.scrollTo({ top: wrapperTopRef.current, behavior: 'smooth' })
           }}
-          className='glassmorphism mt-12 border cursor-pointer w-40 text-center pt-4 pb-3 text-md text-white hover:bg-orange-600 duration-300 rounded-3xl z-40'>
+          className='glassmorphism mt-12 border cursor-pointer w-40 text-center pt-4 pb-3 text-md text-white hover:bg-orange-600 duration-300 rounded-3xl z-40'
+        >
           <i className='animate-bounce fas fa-angle-double-down' />{' '}
           <span>
             {siteConfig('MATERY_SHOW_START_READING', null, CONFIG) &&

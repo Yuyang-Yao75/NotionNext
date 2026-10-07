@@ -21,7 +21,10 @@ const Hero = props => {
   const { locale } = useGlobal()
   const scrollToWrapper = () => {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
-    window.scrollTo({ top: wrapperTopRef.current - 2 * rem, behavior: 'smooth' })
+    window.scrollTo({
+      top: wrapperTopRef.current - 2 * rem,
+      behavior: 'smooth'
+    })
   }
 
   if (!typedOptionsRef.current) {
@@ -55,19 +58,21 @@ const Hero = props => {
     updateHeaderHeight()
 
     if (typedElementRef.current) {
-      loadExternalResource('/js/typed.min.js', 'js').then(() => {
-        if (
-          !cancelled &&
-          window.Typed &&
-          typedElementRef.current &&
-          !typedInstanceRef.current
-        ) {
-          typedInstanceRef.current = new window.Typed(
-            typedElementRef.current,
-            typedOptionsRef.current
-          )
-        }
-      })
+      loadExternalResource('/js/typed.min.js', 'js')
+        .then(() => {
+          if (
+            !cancelled &&
+            window.Typed &&
+            typedElementRef.current &&
+            !typedInstanceRef.current
+          ) {
+            typedInstanceRef.current = new window.Typed(
+              typedElementRef.current,
+              typedOptionsRef.current
+            )
+          }
+        })
+        .catch(() => {})
     }
 
     window.addEventListener('resize', updateHeaderHeight)
@@ -86,7 +91,8 @@ const Hero = props => {
     <header
       id='header'
       style={{ zIndex: 1 }}
-      className='w-full h-screen relative bg-black'>
+      className='w-full h-screen relative bg-black'
+    >
       <div className='text-white absolute bottom-0 flex flex-col h-full items-center justify-center w-full '>
         {/* 站点标题 */}
         <div className='font-bold text-4xl md:text-5xl shadow-text'>
@@ -105,7 +111,8 @@ const Hero = props => {
         {/* 滚动按钮 */}
         <div
           onClick={scrollToWrapper}
-          className='z-10 cursor-pointer w-full text-center py-4 text-3xl absolute bottom-10 text-white [text-shadow:0_0_0.1em_black,0_0_0.2em_black]'>
+          className='z-10 cursor-pointer w-full text-center py-4 text-3xl absolute bottom-10 text-white [text-shadow:0_0_0.1em_black,0_0_0.2em_black]'
+        >
           <div className='opacity-70 animate-bounce text-xs'>
             {siteConfig('HEXO_SHOW_START_READING', null, CONFIG) &&
               locale.COMMON.START_READING}

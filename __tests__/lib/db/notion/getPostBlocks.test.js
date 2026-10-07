@@ -1,14 +1,29 @@
-jest.mock('@/lib/db/notion/getNotionAPI', () => ({}))
+jest.mock('@/lib/db/notion/getNotionAPI', () => ({
+  getSignedFileUrls: jest.fn()
+}))
+jest.mock('@/lib/cache/cache_manager', () => ({
+  delCacheData: jest.fn(),
+  getDataFromCache: jest.fn(),
+  getOrSetDataWithCache: jest.fn(),
+  setDataToCache: jest.fn()
+}))
 jest.mock('p-limit', () => () => fn => fn())
 jest.mock('notion-utils', () => ({
   getBlockValue: jest.fn(entry => entry?.value?.value || entry?.value || entry)
 }))
 
 import {
+  fetchNotionPageBlocks,
   formatNotionBlock,
+  getPageBlockCacheKey,
   hasExpiredSignedUrls,
   preferStablePdfSignedUrls
 } from '@/lib/db/notion/getPostBlocks'
+import notionAPI from '@/lib/db/notion/getNotionAPI'
+import {
+  getOrSetDataWithCache,
+  setDataToCache
+} from '@/lib/cache/cache_manager'
 import {
   isExternalVideoEmbedUrl,
   isAppleMusicEmbedUrl,
@@ -357,4 +372,80 @@ describe('formatNotionBlock', () => {
       expect(formatted['tab-a'].value.type).toBe('text')
     }
   )
+})
+
+describe('fetchNotionPageBlocks signed URL refresh', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it.each([
+    'https://notion.so/signed/attachment%3Afile-id%3Areport.pdf?table=block&id=file-block',
+    'https://cdn.example.com/files/report.pdf'
+  ])('does not refresh a URL without an expiration timestamp: %s', async url => {
+    const recordMap = {
+      signed_urls: { 'file-block': url },
+      block: {
+        'file-block': {
+          value: {
+            id: 'file-block',
+            type: 'file',
+            properties: { source: [[url]] }
+          }
+        }
+      }
+    }
+    getOrSetDataWithCache.mockResolvedValueOnce(recordMap)
+
+    expect(hasExpiredSignedUrls(recordMap)).toBe(false)
+    await expect(fetchNotionPageBlocks('page-id', 'test')).resolves.toBe(recordMap)
+    expect(notionAPI.getSignedFileUrls).not.toHaveBeenCalled()
+    expect(setDataToCache).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['file.notion.com', 'source'],
+    ['file.notion.so', 'source'],
+    ['file.notion.com', 'page_cover'],
+    ['file.notion.so', 'page_cover']
+  ])('refreshes an expired %s URL stored in %s', async (hostname, location) => {
+    const attachmentId = '89da7f2e-0215-4515-8cc8-204d6646257f'
+    const baseUrl = `https://${hostname}/f/f/427487c8-7fd8-81dc-a5ee-00034e84d0b0/${attachmentId}/report.pdf`
+    const expiredUrl = `${baseUrl}?expirationTimestamp=1&signature=expired`
+    const freshUrl = `${baseUrl}?expirationTimestamp=${Date.now() + 60 * 60 * 1000}&signature=fresh`
+    const block = {
+      id: 'file-block',
+      type: location === 'page_cover' ? 'page' : 'file',
+      ...(location === 'page_cover'
+        ? { format: { page_cover: expiredUrl } }
+        : { properties: { source: [[expiredUrl]] } })
+    }
+    const recordMap = {
+      block: { 'file-block': { value: { value: block } } }
+    }
+    getOrSetDataWithCache.mockResolvedValueOnce(recordMap)
+    notionAPI.getSignedFileUrls.mockResolvedValueOnce({ signedUrls: [freshUrl] })
+
+    expect(hasExpiredSignedUrls(recordMap)).toBe(true)
+    await expect(fetchNotionPageBlocks('page-id', 'test')).resolves.toBe(recordMap)
+    expect(notionAPI.getSignedFileUrls).toHaveBeenCalledTimes(1)
+    expect(notionAPI.getSignedFileUrls).toHaveBeenCalledWith([
+      {
+        permissionRecord: { table: 'block', id: 'file-block' },
+        url: `attachment:${attachmentId}:report.pdf`
+      }
+    ])
+    expect(recordMap.signed_urls['file-block']).toBe(freshUrl)
+    expect(
+      location === 'page_cover'
+        ? block.format.page_cover
+        : block.properties.source[0][0]
+    ).toBe(freshUrl)
+    expect(setDataToCache).toHaveBeenCalledWith(
+      getPageBlockCacheKey('page-id'),
+      recordMap,
+      null
+    )
+    expect(hasExpiredSignedUrls(recordMap)).toBe(false)
+  })
 })

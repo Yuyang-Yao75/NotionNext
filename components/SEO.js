@@ -7,10 +7,13 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 
-export const getSeoResourceHints = ({ hasWebFontUrl, analyticsGoogleId }) => {
+export const getSeoResourceHints = ({
+  hasGoogleFontsUrl,
+  analyticsGoogleId
+}) => {
   const hints = []
 
-  if (hasWebFontUrl) {
+  if (hasGoogleFontsUrl) {
     hints.push(
       { rel: 'dns-prefetch', href: '//fonts.googleapis.com' },
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -52,13 +55,14 @@ const SEO = props => {
   const hasWebFontUrl = Array.isArray(webFontUrl)
     ? webFontUrl.filter(Boolean).length > 0
     : Boolean(webFontUrl)
+  const hasGoogleFontsUrl = containsGoogleFontsUrl(webFontUrl)
   const ANALYTICS_GOOGLE_ID = siteConfig(
     'ANALYTICS_GOOGLE_ID',
     null,
     NOTION_CONFIG
   )
   const resourceHints = getSeoResourceHints({
-    hasWebFontUrl,
+    hasGoogleFontsUrl,
     analyticsGoogleId: ANALYTICS_GOOGLE_ID
   })
 
@@ -101,8 +105,7 @@ const SEO = props => {
   const title = meta?.title || TITLE
   const description = meta?.description || `${siteInfo?.description}`
   const type = meta?.type === 'Post' ? 'article' : meta?.type || 'website'
-  const language =
-    router?.locale || siteConfig('LANG', 'zh-CN', NOTION_CONFIG)
+  const language = router?.locale || siteConfig('LANG', 'zh-CN', NOTION_CONFIG)
   const lang = String(language).replace('-', '_') // Facebook OpenGraph 要 zh_CN 這樣的格式才抓得到語言
   const category = Array.isArray(meta?.category)
     ? meta?.category?.[0]
@@ -167,7 +170,10 @@ const SEO = props => {
         name='viewport'
         content='width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0'
       />
-      <meta name='robots' content='follow, index, max-snippet:-1, max-image-preview:large, max-video-preview:-1' />
+      <meta
+        name='robots'
+        content='follow, index, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+      />
       <meta charSet='UTF-8' />
       <meta name='format-detection' content='telephone=no' />
       <meta name='mobile-web-app-capable' content='yes' />
@@ -255,7 +261,10 @@ const SEO = props => {
       {meta?.type === 'Post' && (
         <>
           {meta.publishTime && (
-            <meta property='article:published_time' content={meta.publishTime} />
+            <meta
+              property='article:published_time'
+              content={meta.publishTime}
+            />
           )}
           {meta.modifiedTime && (
             <meta
@@ -362,6 +371,18 @@ export const generateStructuredData = (
   }
 
   return baseData
+}
+
+const containsGoogleFontsUrl = fontUrl => {
+  const urls = Array.isArray(fontUrl) ? fontUrl : [fontUrl]
+
+  return urls.filter(Boolean).some(url => {
+    try {
+      return new URL(url).hostname === 'fonts.googleapis.com'
+    } catch {
+      return false
+    }
+  })
 }
 
 const getAbsoluteImageUrl = (image, siteUrl) => {
@@ -500,8 +521,7 @@ const getSEOMeta = (props, router, locale) => {
         publishDay: post?.publishDay,
         lastEditedDay: post?.lastEditedDay,
         publishTime:
-          getIsoTime(post?.publishDate) ||
-          getIsoTime(post?.date?.start_date),
+          getIsoTime(post?.publishDate) || getIsoTime(post?.date?.start_date),
         modifiedTime: getIsoTime(post?.lastEditedTime || post?.lastEditedDate)
       }
   }
